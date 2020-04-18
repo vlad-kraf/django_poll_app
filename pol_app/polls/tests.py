@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.utils import timezone
 from django.urls import reverse
 
-from .models import Question
+from .models import Question, Choice
 
 
 # Create your tests here.
@@ -46,6 +46,13 @@ def create_question(question_text, days):
     """
     time = timezone.now() + datetime.timedelta(days=days)
     return Question.objects.create(question_text=question_text, pub_date=time)
+
+
+def create_choice(question, choice_text):
+    """
+    Create a choice with the given `quest` object and `choice_text`.
+    """
+    return Choice.objects.create(question=question, choice_text=choice_text)
 
 
 class QuestionIndexViewTests(TestCase):
@@ -149,3 +156,27 @@ class QuestionResultsViewTests(TestCase):
         response = self.client.get(url)
         self.assertContains(response, past_question.question_text)
 
+
+class QuestionIndexViewTests(TestCase):
+    def test_question_with_choices(self):
+        """
+        The detail view of a question with a pub_date in the past
+        displays the question's text.
+        """
+        question = create_question(question_text='Question with choices.', days=-5)
+        create_choice(question=question, choice_text='Option1')
+
+        url = reverse('polls:index')
+        response = self.client.get(url)
+        self.assertContains(response, question.question_text)
+
+    def test_question_without_choices(self):
+        """
+        The detail view of a question with a pub_date in the past
+        displays the question's text.
+        """
+        question = create_question(question_text='Question without choices.', days=-5)
+
+        url = reverse('polls:index')
+        response = self.client.get(url)
+        self.assertNotContains(response, question.question_text)
